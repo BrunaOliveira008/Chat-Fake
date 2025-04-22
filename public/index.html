@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Chat</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <ul>
+                <div>
+                    <li><img src="/img/insta (2).png"></li>
+                </div>
+                <li><img src="/img/home.png"></li>
+                <li><img src="/img/procura.png"></li>
+                <li><img src="/img/notificacao.png"></li>
+                <li><img src="/img/add.png"></li>
+                <li><img src="/img/perfil.png"></li>
+                <li><img src="/img/menu.png"></li>
+            </ul>
+        </nav>
+
+        <!-- Lista de conversas -->
+        <aside class="conversas">
+            <h2>Mensagens</h2>
+            <div class="chat-item">amand.88</div>
+            <div class="chat-item">kakak._.</div>
+            <div class="chat-item">lilambo__</div>
+        </aside>
+
+        <!-- Área do chat -->
+        <main class="chat-container">
+            <div class="chat-header">
+                <div class="divHeader">
+                    <img src="/img/grupo.png" alt="">
+                    <h4 id="grupoTitulo" onclick="editarNomeGrupo()">Nome do Grupo</h4>
+                    <input type="text" id="grupoNomeInput" placeholder="Digite o nome do grupo" style="display: none;" />
+                </div>
+                <div class="ligacao">
+                    <img src="/img/call.png">
+                    <img src="/img/cam.png">
+                </div>
+            </div>
+            <ul class="mensagens" id="mensagens"></ul>
+            <form id="chat-form">
+                <input type="text" id="nome" placeholder="Nome de usuário">
+                <input type="text" id="mensagem" placeholder="Mensagem...">
+                <button type="submit">Enviar</button>
+            </form>
+        </main>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const nomeInput = document.getElementById("nome");
+        const mensagemInput = document.getElementById("mensagem");
+        const mensagens = document.getElementById("mensagens");
+
+        const grupoTitulo = document.getElementById("grupoTitulo");
+        const grupoNomeInput = document.getElementById("grupoNomeInput");
+
+        // Recupera o nome do grupo salvo e preenche o campo
+        window.onload = () => {
+            const grupoNomeSalvo = localStorage.getItem("grupoNome");
+            if (grupoNomeSalvo) {
+                grupoTitulo.textContent = grupoNomeSalvo;
+            }
+        };
+
+        // Função para permitir editar o nome do grupo
+        function editarNomeGrupo() {
+            grupoTitulo.style.display = "none";
+            grupoNomeInput.style.display = "block";
+            grupoNomeInput.value = grupoTitulo.textContent;
+            grupoNomeInput.focus();
+        }
+
+        // Salva o nome do grupo e volta para o título
+        grupoNomeInput.addEventListener('blur', () => {
+            const grupoNome = grupoNomeInput.value.trim();
+            if (grupoNome) {
+                grupoTitulo.textContent = grupoNome;
+                localStorage.setItem("grupoNome", grupoNome);
+            }
+            grupoTitulo.style.display = "block";
+            grupoNomeInput.style.display = "none";
+        });
+
+        document.querySelector('form').addEventListener('submit', event => {
+            event.preventDefault();
+            const nome = nomeInput.value.trim();
+            const mensagem = mensagemInput.value.trim();
+
+            if (nome && mensagem) {
+                socket.emit('chat message', { nome, mensagem });
+                mensagemInput.value = '';
+                nomeInput.disabled = true;
+            }
+        });
+
+        socket.on('chat message', dados => {
+            const lista = document.createElement("li");
+            lista.classList.add(dados.nome === nomeInput.value ? "sent" : "received");
+
+            // Criando nome do usuário
+            const nomeUsuario = document.createElement("div");
+            nomeUsuario.classList.add("user-name");
+            nomeUsuario.textContent = dados.nome;
+
+            // Criando a mensagem
+            const textoMensagem = document.createElement("span");
+            textoMensagem.textContent = dados.mensagem;
+
+            // Adicionando à estrutura da mensagem
+            lista.appendChild(nomeUsuario);
+            lista.appendChild(textoMensagem);
+            mensagens.appendChild(lista);
+
+            lista.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+    </script>
+</body>
+</html>
